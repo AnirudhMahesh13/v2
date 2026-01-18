@@ -1,0 +1,197 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model School {
+  id        String   @id @default(uuid())
+  name      String
+  domain    String   @unique // e.g., "carleton.ca"
+  logoUrl   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users      User[]
+  courses    Course[]
+  professors Professor[]
+}
+
+model User {
+  id            String    @id @default(uuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  accounts      Account[]
+  sessions      Session[]
+  
+  // App specific
+  schoolId      String?
+  school        School?         @relation(fields: [schoolId], references: [id])
+  reviews       Review[]
+  tutorListings TutorListing[]
+  bookings      Booking[]       @relation("StudentBookings")
+  threads       Thread[]
+  comments      Comment[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Account {
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+ 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+ 
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+ 
+  @@id([provider, providerAccountId])
+}
+ 
+model Session {
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+ 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+ 
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+ 
+  @@id([identifier, token])
+}
+
+model Course {
+  id        String   @id @default(uuid())
+  code      String   // e.g. "COMP1405"
+  name      String
+  schoolId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  school        School         @relation(fields: [schoolId], references: [id])
+  reviews       Review[]
+  tutorListings TutorListing[]
+  threads       Thread[]
+  professors    Professor[]
+}
+
+model Professor {
+  id        String   @id @default(uuid())
+  name      String
+  department String
+  schoolId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  school  School   @relation(fields: [schoolId], references: [id])
+  reviews Review[]
+  threads Thread[]
+  courses Course[]
+}
+
+model Review {
+  id        String   @id @default(uuid())
+  body      String?
+  rating    Int      // Overall rating 1-5
+  
+  // Specific metrics (nullable depending on target)
+  difficulty Int?    // For Courses
+  workload   Int?    // For Courses
+  clarity    Int?    // For Professors
+  fairness   Int?    // For Professors
+  effectiveness Int? // For Tutors
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+
+  courseId  String?
+  course    Course?  @relation(fields: [courseId], references: [id])
+
+  professorId String?
+  professor   Professor? @relation(fields: [professorId], references: [id])
+
+  tutorListingId String?
+  tutorListing   TutorListing? @relation(fields: [tutorListingId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+model TutorListing {
+  id          String   @id @default(uuid())
+  description String
+  hourlyRate  Int      // in cents
+  courseId    String
+  tutorId     String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  course   Course    @relation(fields: [courseId], references: [id])
+  tutor    User      @relation(fields: [tutorId], references: [id])
+  bookings Booking[]
+  reviews  Review[]
+}
+
+model Booking {
+  id             String   @id @default(uuid())
+  tutorListingId String
+  studentId      String
+  stripeSessionId String?
+  status         String   @default("PENDING") // PENDING, CONFIRMED, CANCELLED
+  scheduledAt    DateTime
+  createdAt      DateTime @default(now())
+
+  tutorListing TutorListing @relation(fields: [tutorListingId], references: [id])
+  student      User         @relation("StudentBookings", fields: [studentId], references: [id])
+}
+
+model Thread {
+  id        String   @id @default(uuid())
+  title     String
+  body      String
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  courseId    String?
+  course      Course?    @relation(fields: [courseId], references: [id])
+  
+  professorId String?
+  professor   Professor? @relation(fields: [professorId], references: [id])
+
+  comments Comment[]
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  body      String
+  threadId  String
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  thread Thread @relation(fields: [threadId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+}
