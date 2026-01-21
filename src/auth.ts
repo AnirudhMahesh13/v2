@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma"
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
     adapter: PrismaAdapter(prisma),
+    session: { strategy: "jwt" },
     providers: [
         Google({
             clientId: process.env.GOOGLE_CLIENT_ID,
@@ -12,9 +13,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         }),
     ],
     callbacks: {
-        session({ session, user }) {
+        jwt({ token, user }) {
+            if (user) {
+                token.role = user.role
+                token.id = user.id
+            }
+            return token
+        },
+        session({ session, token }) {
             if (session.user) {
-                session.user.id = user.id
+                session.user.id = token.id as string
+                // @ts-expect-error -- role is dynamic
+                session.user.role = token.role as Role
             }
             return session
         },

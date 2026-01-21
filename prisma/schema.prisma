@@ -7,6 +7,19 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Role {
+  USER
+  TUTOR
+  ADMIN
+}
+
+enum ReportReason {
+  SPAM
+  HARASSMENT
+  INACCURATE
+  OTHER
+}
+
 model School {
   id        String   @id @default(uuid())
   name      String
@@ -26,6 +39,7 @@ model User {
   email         String    @unique
   emailVerified DateTime?
   image         String?
+  role          Role      @default(USER)
   accounts      Account[]
   sessions      Session[]
   
@@ -37,6 +51,7 @@ model User {
   bookings      Booking[]       @relation("StudentBookings")
   threads       Thread[]
   comments      Comment[]
+  itemReports   Report[]        @relation("Reporter")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -134,15 +149,26 @@ model Review {
   tutorListingId String?
   tutorListing   TutorListing? @relation(fields: [tutorListingId], references: [id])
 
+  // Moderation
+  isVisible   Boolean  @default(true)
+  reportCount Int      @default(0)
+  reports     Report[]
+
   createdAt DateTime @default(now())
 }
 
 model TutorListing {
-  id          String   @id @default(uuid())
-  description String
-  hourlyRate  Int      // in cents
-  courseId    String
-  tutorId     String
+  id               String   @id @default(uuid())
+  description      String
+  hourlyRate       Int      // in cents
+  courseId         String
+  tutorId          String
+  
+  // Verification & Trust
+  isVerified       Boolean  @default(false)
+  gradeEvidenceUrl String?
+  trustScore       Float    @default(0.0)
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -182,6 +208,11 @@ model Thread {
   professor   Professor? @relation(fields: [professorId], references: [id])
 
   comments Comment[]
+
+  // Moderation
+  isVisible   Boolean  @default(true)
+  reportCount Int      @default(0)
+  reports     Report[]
 }
 
 model Comment {
@@ -195,3 +226,22 @@ model Comment {
   thread Thread @relation(fields: [threadId], references: [id])
   user   User   @relation(fields: [userId], references: [id])
 }
+
+model Report {
+  id        String       @id @default(uuid())
+  reason    ReportReason
+  details   String?
+  
+  reporterId String
+  reporter   User @relation("Reporter", fields: [reporterId], references: [id])
+
+  // Targets (only one should be set)
+  reviewId String?
+  review   Review? @relation(fields: [reviewId], references: [id])
+
+  threadId String?
+  thread   Thread? @relation(fields: [threadId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
