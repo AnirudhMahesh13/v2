@@ -53,6 +53,18 @@ model User {
   comments      Comment[]
   itemReports   Report[]        @relation("Reporter")
 
+  // Social Immersion
+  karma             Int       @default(0)
+  bio               String?
+  badges            Badge[]
+  enrolledCourseIds String[]  // Simple array of IDs for now
+  
+  followedBy    Follow[]  @relation("UserFollowedBy")
+  following     Follow[]  @relation("UserFollows")
+  
+  resources     Resource[]
+  upvotes       Upvote[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -109,6 +121,7 @@ model Course {
   tutorListings TutorListing[]
   threads       Thread[]
   professors    Professor[]
+  resources     Resource[]
 }
 
 model Professor {
@@ -153,6 +166,10 @@ model Review {
   isVisible   Boolean  @default(true)
   reportCount Int      @default(0)
   reports     Report[]
+
+  // Social
+  images      String[]
+  upvotes     Upvote[]
 
   createdAt DateTime @default(now())
 }
@@ -225,6 +242,8 @@ model Comment {
 
   thread Thread @relation(fields: [threadId], references: [id])
   user   User   @relation(fields: [userId], references: [id])
+  
+  upvotes Upvote[]
 }
 
 model Report {
@@ -243,5 +262,69 @@ model Report {
   thread   Thread? @relation(fields: [threadId], references: [id])
 
   createdAt DateTime @default(now())
+}
+
+// SOCIAL IMMERSION MODELS
+
+model Follow {
+  followerId String
+  followingId String
+  createdAt DateTime @default(now())
+
+  follower User @relation("UserFollows", fields: [followerId], references: [id])
+  following User @relation("UserFollowedBy", fields: [followingId], references: [id])
+
+  @@id([followerId, followingId])
+}
+
+model Badge {
+  id String @id @default(uuid())
+  name String 
+  description String
+  icon String // Lucide icon name or URL
+  userId String
+  user User @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+}
+
+model Resource {
+  id String @id @default(uuid())
+  title String
+  description String?
+  url String // Supabase Storage URL
+  fileType String // e.g. 'PDF', 'IMG'
+  
+  courseId String
+  course Course @relation(fields: [courseId], references: [id])
+  
+  userId String
+  user User @relation(fields: [userId], references: [id])
+
+  upvotes Upvote[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Upvote {
+  id String @id @default(uuid())
+  userId String
+  user User @relation(fields: [userId], references: [id])
+  
+  // Polymorphic-ish
+  resourceId String?
+  resource Resource? @relation(fields: [resourceId], references: [id])
+  
+  reviewId String?
+  review Review? @relation(fields: [reviewId], references: [id])
+  
+  commentId String?
+  comment Comment? @relation(fields: [commentId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, resourceId])
+  @@unique([userId, reviewId])
+  @@unique([userId, commentId])
 }
 

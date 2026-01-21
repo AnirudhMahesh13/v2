@@ -30,7 +30,7 @@ export default async function RootLayout({
   const user = session?.user;
 
   return (
-    <html lang="en" className={`${inter.variable} ${spaceGrotesk.variable}`}>
+    <html lang="en" className={`${inter.variable} ${spaceGrotesk.variable}`} suppressHydrationWarning>
       <body className="antialiased bg-grid-pattern min-h-screen flex flex-col">
         <Navigation user={user} />
         {/* Animated background elements */}
