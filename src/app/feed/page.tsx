@@ -5,8 +5,11 @@ import { Sparkles } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 
-export default async function FeedPage() {
-    const { items, user } = await getPersonalizedFeed()
+export default async function FeedPage({ searchParams }: { searchParams: Promise<{ filter?: string }> }) {
+    const params = await searchParams
+    const filter = (params.filter === 'TRENDING' ? 'TRENDING' : 'ALL') as 'TRENDING' | 'ALL'
+
+    const { items, user } = await getPersonalizedFeed(filter)
 
     if (!user) {
         return (
@@ -20,17 +23,17 @@ export default async function FeedPage() {
         <div className="min-h-screen bg-slate-50">
             <div className="max-w-6xl mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-4 gap-8">
 
-                {/* Left Sidebar - Navigation (Placeholder or Reuse) */}
+                {/* Left Sidebar - Navigation */}
                 <div className="hidden lg:block lg:col-span-1">
                     <div className="sticky top-24 space-y-4">
                         <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
                             <h3 className="font-bold text-slate-900 mb-2">Filters</h3>
-                            <button className="w-full text-left px-3 py-2 rounded-lg bg-indigo-50 text-indigo-700 font-medium text-sm mb-1">
+                            <a href="/feed" className={`block w-full text-left px-3 py-2 rounded-lg font-medium text-sm mb-1 ${filter === 'ALL' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50'}`}>
                                 My Feed
-                            </button>
-                            <button className="w-full text-left px-3 py-2 rounded-lg text-slate-600 hover:bg-slate-50 font-medium text-sm">
+                            </a>
+                            <a href="/feed?filter=TRENDING" className={`block w-full text-left px-3 py-2 rounded-lg font-medium text-sm ${filter === 'TRENDING' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50'}`}>
                                 Trending at {user.schoolId ? 'My School' : 'Classmate'}
-                            </button>
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -39,7 +42,9 @@ export default async function FeedPage() {
                 <div className="lg:col-span-2 space-y-6">
                     <div className="flex items-center gap-2 mb-2">
                         <Sparkles className="w-5 h-5 text-indigo-500 fill-indigo-500" />
-                        <h1 className="text-xl font-bold text-slate-900">Your Academic Feed</h1>
+                        <h1 className="text-xl font-bold text-slate-900">
+                            {filter === 'TRENDING' ? 'Trending Content' : 'Your Academic Feed'}
+                        </h1>
                     </div>
 
                     {items.length > 0 ? (

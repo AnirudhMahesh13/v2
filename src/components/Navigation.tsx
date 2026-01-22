@@ -28,6 +28,12 @@ export function Navigation({ user }: { user: Session['user'] | undefined }) {
                         <BookOpen className="w-4 h-4" />
                         Find Tutors
                     </Link>
+                    {user && (
+                        <Link href="/feed" className="flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">
+                            <BookOpen className="w-4 h-4 text-indigo-500" />
+                            My Feed
+                        </Link>
+                    )}
                 </div>
 
                 {/* Auth State */}

@@ -157,12 +157,12 @@ export async function uploadResource(courseId: string, url: string, title: strin
 
 // --- FEED AGGREGATION ---
 
-export async function getPersonalizedFeed() {
+// --- FEED AGGREGATION ---
+
+export async function getPersonalizedFeed(filter: 'ALL' | 'TRENDING' = 'ALL') {
     const session = await auth()
-    // If not logged in, show global trending? for now return empty or simple list
     if (!session?.user?.id) return { error: "Unauthenticated", items: [] }
 
-    // Get User's following, school, and enrolled courses
     const user = await prisma.user.findUnique({
         where: { id: session.user.id },
         include: { following: true }
@@ -174,57 +174,72 @@ export async function getPersonalizedFeed() {
     const schoolId = user.schoolId
     const enrolledIds = user.enrolledCourseIds
 
-    // Fetch REVIEWS (from followed users OR same school OR enrolled courses)
-    const reviews = await prisma.review.findMany({
-        where: {
-            OR: [
-                { userId: { in: followingIds } },
-                { user: { schoolId: schoolId || undefined } }, // If schoolId exists
-                { courseId: { in: enrolledIds } }
-            ],
+    // Base Filters
+    const baseWhere = filter === 'TRENDING'
+        ? { // Trending: Strict to School Scope & Visible
+            user: { schoolId: schoolId || undefined },
             isVisible: true
-        },
-        take: 10,
-        orderBy: { createdAt: 'desc' },
-        include: { user: true, course: true, professor: true, upvotes: true }
-    })
-
-    // Fetch THREADS
-    const threads = await prisma.thread.findMany({
-        where: {
+        }
+        : { // All: Following + School + Enrolled
             OR: [
                 { userId: { in: followingIds } },
                 { user: { schoolId: schoolId || undefined } },
                 { courseId: { in: enrolledIds } }
             ],
             isVisible: true
-        },
+        }
+
+    // Sort Strategy
+    const orderBy: any = filter === 'TRENDING'
+        ? { upvotes: { _count: 'desc' } } // Sort by most votes
+        : { createdAt: 'desc' }           // Sort by newest
+
+    // Fetch REVIEWS
+    const reviews = await prisma.review.findMany({
+        where: baseWhere,
         take: 10,
-        orderBy: { createdAt: 'desc' },
+        orderBy,
+        include: { user: true, course: true, professor: true, upvotes: true }
+    })
+
+    // Fetch THREADS
+    // Threads don't have upvotes in this schema version (only comments), so for trending we use comment count
+    const threads = await prisma.thread.findMany({
+        where: baseWhere as any, // Schema limitations might vary
+        take: 10,
+        orderBy: filter === 'TRENDING' ? { comments: { _count: 'desc' } } : { createdAt: 'desc' },
         include: { user: true, course: true, _count: { select: { comments: true } } }
     })
 
     // Fetch RESOURCES
     const resources = await prisma.resource.findMany({
-        where: {
-            OR: [
-                { userId: { in: followingIds } },
-                { courseId: { in: enrolledIds } },
-                // Resources usually tied to course, so mainly enrolled
-                { course: { schoolId: schoolId || undefined } }
-            ]
-        },
+        where: filter === 'TRENDING'
+            ? { course: { schoolId: schoolId || undefined } }
+            : {
+                OR: [
+                    { userId: { in: followingIds } },
+                    { courseId: { in: enrolledIds } },
+                    { course: { schoolId: schoolId || undefined } }
+                ]
+            },
         take: 5,
-        orderBy: { createdAt: 'desc' },
+        orderBy,
         include: { user: true, course: true, upvotes: true }
     })
 
-    // Merge and Sort
-    const feedItems = [
-        ...reviews.map(r => ({ type: 'REVIEW', data: r, date: r.createdAt })),
-        ...threads.map(t => ({ type: 'THREAD', data: t, date: t.createdAt })),
-        ...resources.map(r => ({ type: 'RESOURCE', data: r, date: r.createdAt }))
-    ].sort((a, b) => b.date.getTime() - a.date.getTime())
+    // Merge and Sort (Re-sort combined list purely by date if 'ALL', or mix score if 'TRENDING')
+    // For simplicity, we just interleave them. If TRENDING, we rely on the individual fetches being high quality.
+    let feedItems = [
+        ...reviews.map(r => ({ type: 'REVIEW', data: r, date: r.createdAt, score: r.upvotes?.length || 0 })),
+        ...threads.map(t => ({ type: 'THREAD', data: t, date: t.createdAt, score: t._count?.comments || 0 })),
+        ...resources.map(r => ({ type: 'RESOURCE', data: r, date: r.createdAt, score: r.upvotes?.length || 0 }))
+    ]
+
+    if (filter === 'TRENDING') {
+        feedItems.sort((a, b) => b.score - a.score)
+    } else {
+        feedItems.sort((a, b) => b.date.getTime() - a.date.getTime())
+    }
 
     return { items: feedItems, user }
 }

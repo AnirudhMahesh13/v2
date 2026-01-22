@@ -1,10 +1,10 @@
 import { prisma } from '@/lib/prisma'
 import { Trophy, Medal, Star } from 'lucide-react'
 
-export async function Leaderboard({ schoolId }: { schoolId: string }) {
+export async function Leaderboard({ schoolId }: { schoolId?: string }) {
     // Top Contributors (by Karma)
     const topUsers = await prisma.user.findMany({
-        where: { schoolId },
+        where: schoolId ? { schoolId } : undefined,
         orderBy: { karma: 'desc' },
         take: 5
     })
@@ -26,8 +26,8 @@ export async function Leaderboard({ schoolId }: { schoolId: string }) {
                     <div key={user.id} className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                             <div className={`w-6 h-6 flex items-center justify-center font-bold text-xs rounded ${index === 0 ? 'bg-amber-100 text-amber-700' :
-                                    index === 1 ? 'bg-slate-100 text-slate-700' :
-                                        index === 2 ? 'bg-orange-50 text-orange-700' : 'text-slate-400'
+                                index === 1 ? 'bg-slate-100 text-slate-700' :
+                                    index === 2 ? 'bg-orange-50 text-orange-700' : 'text-slate-400'
                                 }`}>
                                 {index + 1}
                             </div>

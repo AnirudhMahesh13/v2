@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { ArrowRight, BookOpen, Users, ShieldCheck } from 'lucide-react'
+import { Leaderboard } from '@/components/Leaderboard'
 
 export default function LandingPage() {
   return (
@@ -54,6 +55,13 @@ export default function LandingPage() {
           description="Book sessions with verified tutors using our secure, guaranteed payment protection."
         />
       </section>
+
+      {/* Community Leaderboard */}
+      <section className="w-full max-w-4xl px-6 pb-32">
+        <h2 className="text-2xl font-bold text-center text-slate-900 mb-8 font-display">Top Contributors</h2>
+        <Leaderboard />
+      </section>
+
     </div>
   )
 }

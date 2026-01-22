@@ -4,6 +4,7 @@ import { format } from 'util' // Node only, avoid. Use native.
 import { MessageSquare, Star, FileText, Download, ThumbsUp, ImageIcon } from 'lucide-react'
 import { toggleVote } from '@/actions/social'
 import { useState } from 'react'
+import Link from 'next/link'
 
 // Helper for dates
 const formatDate = (dateString: Date) => {
@@ -22,7 +23,7 @@ export function FeedItem({ item, currentUser }: { item: any, currentUser: any })
 
     async function handleVote() {
         // Toggle Local State
-        setVotes(prev => hasVoted ? prev - 1 : prev + 1)
+        setVotes((prev: number) => hasVoted ? prev - 1 : prev + 1)
         setHasVoted(!hasVoted)
 
         // Server Action
@@ -83,7 +84,9 @@ export function FeedItem({ item, currentUser }: { item: any, currentUser: any })
 
                 {type === 'THREAD' && (
                     <div className="space-y-2">
-                        <h3 className="font-bold text-lg text-slate-900">{data.title}</h3>
+                        <Link href={`/schools/${data.course?.schoolId || 'default'}/courses/${data.courseId}/threads/${data.id}`} className="block group">
+                            <h3 className="font-bold text-lg text-slate-900 group-hover:text-indigo-600 transition-colors">{data.title}</h3>
+                        </Link>
                         <p className="text-slate-600 line-clamp-3">{data.body}</p>
                         <div className="flex items-center gap-2 text-slate-400 text-sm mt-3">
                             <MessageSquare className="w-4 h-4" />
