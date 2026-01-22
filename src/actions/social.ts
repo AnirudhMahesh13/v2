@@ -243,3 +243,138 @@ export async function getPersonalizedFeed(filter: 'ALL' | 'TRENDING' = 'ALL') {
 
     return { items: feedItems, user }
 }
+
+// --- FRIENDSHIP SYSTEM ---
+
+export async function sendFriendRequest(targetUserId: string) {
+    const session = await auth()
+    if (!session?.user?.id) return { error: "Unauthenticated" }
+
+    const requesterId = session.user.id
+
+    // Check existing request or friendship
+    const existing = await prisma.friendship.findUnique({
+        where: {
+            requesterId_addresseeId: {
+                requesterId,
+                addresseeId: targetUserId
+            }
+        }
+    })
+
+    const reverse = await prisma.friendship.findUnique({
+        where: {
+            requesterId_addresseeId: {
+                requesterId: targetUserId,
+                addresseeId: requesterId
+            }
+        }
+    })
+
+    if (existing || reverse) {
+        return { error: "Friendship or request already exists" }
+    }
+
+    await prisma.friendship.create({
+        data: {
+            requesterId,
+            addresseeId: targetUserId,
+            status: 'PENDING'
+        }
+    })
+
+    revalidatePath('/')
+    return { success: true }
+}
+
+export async function updateFriendRequestStatus(requestId: string, status: 'ACCEPTED' | 'DECLINED') {
+    const session = await auth()
+    if (!session?.user?.id) return { error: "Unauthenticated" }
+
+    await prisma.friendship.update({
+        where: { id: requestId },
+        data: { status }
+    })
+
+    revalidatePath('/')
+    return { success: true }
+}
+
+export async function getFriends() {
+    const session = await auth()
+    if (!session?.user?.id) return []
+
+    const userId = session.user.id
+
+    const friendships = await prisma.friendship.findMany({
+        where: {
+            OR: [
+                { requesterId: userId, status: 'ACCEPTED' },
+                { addresseeId: userId, status: 'ACCEPTED' }
+            ]
+        },
+        include: {
+            requester: true,
+            addressee: true
+        }
+    })
+
+    // Map to just the OTHER user
+    return friendships.map(f => f.requesterId === userId ? f.addressee : f.requester)
+}
+
+export async function getPendingRequests() {
+    const session = await auth()
+    if (!session?.user?.id) return { incoming: [], outgoing: [] }
+
+    const userId = session.user.id
+
+    const incoming = await prisma.friendship.findMany({
+        where: {
+            addresseeId: userId,
+            status: 'PENDING'
+        },
+        include: { requester: true }
+    })
+
+    const outgoing = await prisma.friendship.findMany({
+        where: {
+            requesterId: userId,
+            status: 'PENDING'
+        },
+        include: { addressee: true }
+    })
+
+    return { incoming, outgoing }
+}
+
+export async function getCommonCourses(targetUserId: string) {
+    const session = await auth()
+    if (!session?.user?.id) return []
+
+    const myId = session.user.id
+    
+    const me = await prisma.user.findUnique({
+        where: { id: myId },
+        select: { enrolledCourseIds: true }
+    })
+
+    const them = await prisma.user.findUnique({
+        where: { id: targetUserId },
+        select: { enrolledCourseIds: true }
+    })
+
+    if (!me || !them) return []
+
+    const commonIds = me.enrolledCourseIds.filter(id => them.enrolledCourseIds.includes(id))
+
+    if (commonIds.length === 0) return []
+
+    const courses = await prisma.course.findMany({
+        where: {
+            id: { in: commonIds }
+        }
+    })
+
+    return courses
+}

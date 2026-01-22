@@ -58,12 +58,24 @@ model User {
   bio               String?
   badges            Badge[]
   enrolledCourseIds String[]  // Simple array of IDs for now
+  lastActive        DateTime? // For Presence Pulse
   
   followedBy    Follow[]  @relation("UserFollowedBy")
   following     Follow[]  @relation("UserFollows")
   
   resources     Resource[]
   upvotes       Upvote[]
+  
+  squadMessages SquadMessage[]
+  bounties      Bounty[]
+
+  // Friendship Relations
+  sentFriendRequests     Friendship[] @relation("FriendshipRequester")
+  receivedFriendRequests Friendship[] @relation("FriendshipAddressee")
+
+  // Messaging Relations
+  sentMessages     Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -122,6 +134,8 @@ model Course {
   threads       Thread[]
   professors    Professor[]
   resources     Resource[]
+  squad         Squad?
+  bounties      Bounty[]
 }
 
 model Professor {
@@ -328,3 +342,76 @@ model Upvote {
   @@unique([userId, commentId])
 }
 
+
+// SQUADS & COLLABORATION
+
+model Squad {
+  id        String   @id @default(uuid())
+  courseId  String   @unique // One squad per course
+  course    Course   @relation(fields: [courseId], references: [id])
+  
+  messages  SquadMessage[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SquadMessage {
+  id        String   @id @default(uuid())
+  content   String
+  
+  squadId   String
+  squad     Squad    @relation(fields: [squadId], references: [id])
+  
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  
+  createdAt DateTime @default(now())
+}
+
+model Bounty {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  reward      Int      // Karma offered
+  
+  courseId    String
+  course      Course   @relation(fields: [courseId], references: [id])
+  
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  
+  isFulfilled Boolean  @default(false)
+  
+  createdAt   DateTime @default(now())
+}
+
+enum FriendshipStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+model Friendship {
+  id          String           @id @default(uuid())
+  requesterId String
+  requester   User             @relation("FriendshipRequester", fields: [requesterId], references: [id])
+  addresseeId String
+  addressee   User             @relation("FriendshipAddressee", fields: [addresseeId], references: [id])
+  status      FriendshipStatus @default(PENDING)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@unique([requesterId, addresseeId])
+}
+
+model Message {
+  id         String   @id @default(uuid())
+  content    String
+  senderId   String
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id])
+  receiverId String
+  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  read       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+}

@@ -5,11 +5,12 @@ import { ResourceUpload } from '@/components/ResourceUpload'
 import { FeedItem } from '@/components/feed/FeedItem'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { EmptyState } from '@/components/EmptyState'
-import { MessageSquare, Users, User, Star, BookOpen } from 'lucide-react'
+import { MessageSquare, Users, User, Star, BookOpen, Clock } from 'lucide-react' // Added Clock
 import { auth } from '@/auth'
 import { ReviewForm } from '@/components/ReviewForm'
 import { ThreadForm } from '@/components/ThreadForm'
 import { BookingButton } from '@/components/BookingButton'
+import { CourseSquad } from '@/components/CourseSquad' // New import
 
 interface PageProps {
     params: Promise<{
@@ -20,6 +21,7 @@ interface PageProps {
 
 export default async function CoursePage({ params }: PageProps) {
     const { schoolId, courseId } = await params
+    const session = await auth()
 
     const course = await prisma.course.findUnique({
         where: { id: courseId },
@@ -55,6 +57,17 @@ export default async function CoursePage({ params }: PageProps) {
         include: { user: true, upvotes: true },
         orderBy: { upvotes: { _count: 'desc' } }
     })
+
+    // Fetch Active Users (Simulated "Pulse" - users active in last 15 mins enrolled in this course or global if not tracked)
+    // Since we don't strictly enforce enrollment on activity yet, we'll fetch recently active users on the platform 
+    // to simulate the "Campus Pulse".
+    const activeUsers = await prisma.user.findMany({
+        where: { lastActive: { gte: new Date(Date.now() - 15 * 60 * 1000) } },
+        take: 5,
+        select: { id: true, name: true, image: true, lastActive: true }
+    })
+
+    const currentUser = session?.user
 
     return (
         <div className="container mx-auto px-6 py-8 space-y-8">
@@ -126,8 +139,42 @@ export default async function CoursePage({ params }: PageProps) {
                                 )}
                             </section>
                         </div>
-                        {/* Sidebar */}
+
+                        {/* Sidebar (Squad & Professors) */}
                         <div className="space-y-8">
+                            {/* ACTIVE NOW */}
+                            <section className="bg-white rounded-xl border border-slate-200 p-4">
+                                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                    <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                                    Studying Now
+                                </h3>
+                                <div className="space-y-3">
+                                    {activeUsers.length === 0 ? (
+                                        <p className="text-xs text-slate-400">No one else is online.</p>
+                                    ) : (
+                                        activeUsers.map(user => (
+                                            <div key={user.id} className="flex items-center gap-2">
+                                                <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-bold">
+                                                    {user.name?.[0]}
+                                                </div>
+                                                <span className="text-sm text-slate-700 truncate">{user.name}</span>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </section>
+
+                            {/* SQUAD CHAT */}
+                            {currentUser ? (
+                                <CourseSquad courseId={course.id} currentUser={currentUser} />
+                            ) : (
+                                <div className="bg-indigo-50 p-6 rounded-xl text-center">
+                                    <p className="font-bold text-indigo-900">Join the Squad</p>
+                                    <p className="text-sm text-indigo-700 mt-1 mb-3">Log in to chat and collaborate.</p>
+                                </div>
+                            )}
+
+                            {/* PROFESSORS */}
                             <section className="bg-white rounded-xl border border-slate-200 p-6">
                                 <h2 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2"><Users className="w-5 h-5 text-indigo-600" /> Professors</h2>
                                 {course.professors.length === 0 ? <p className="text-sm text-slate-500">No professors linked.</p> : (
