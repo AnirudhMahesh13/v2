@@ -28,8 +28,8 @@ export function Sidebar({ user }: SidebarProps) {
 
     // Framer Variants
     const sidebarVariants = {
-        open: { width: 280, transition: { type: "spring", stiffness: 300, damping: 30 } },
-        closed: { width: 80, transition: { type: "spring", stiffness: 300, damping: 30 } }
+        open: { width: 280, transition: { type: "spring" as const, stiffness: 300, damping: 30 } },
+        closed: { width: 80, transition: { type: "spring" as const, stiffness: 300, damping: 30 } }
     }
 
     return (
@@ -37,7 +37,7 @@ export function Sidebar({ user }: SidebarProps) {
             initial="open"
             animate={isCollapsed ? "closed" : "open"}
             variants={sidebarVariants}
-            className="fixed left-0 top-16 bottom-0 z-40 bg-white border-r border-slate-200 shadow-xl hidden lg:flex flex-col overflow-hidden"
+            className="fixed left-0 top-16 bottom-0 z-40 bg-white border-r border-slate-200 shadow-xl hidden lg:flex flex-col border-none"
         >
             {/* Toggle Button */}
             <button
@@ -86,19 +86,19 @@ export function Sidebar({ user }: SidebarProps) {
 
             {/* 4. KARMA & PROFILE */}
             <div className="p-4 border-t border-slate-100">
-                <div className={`bg-slate-900 rounded-xl p-3 flex items-center gap-3 ${isCollapsed ? 'justify-center' : ''}`}>
+                <div className={`bg-gradient-to-br from-indigo-50 to-white border border-indigo-100 rounded-xl p-3 flex items-center gap-3 ${isCollapsed ? 'justify-center' : ''} shadow-sm`}>
                     <div className="relative shrink-0">
                         {/* Ring */}
                         <svg className="w-10 h-10 transform -rotate-90">
-                            <circle cx="20" cy="20" r="18" fill="transparent" stroke="#334155" strokeWidth="3" />
-                            <circle cx="20" cy="20" r="18" fill="transparent" stroke="#818cf8" strokeWidth="3" strokeDasharray="113" strokeDashoffset={113 - (113 * (Math.min(user.karma || 0, 100) / 100))} />
+                            <circle cx="20" cy="20" r="18" fill="transparent" stroke="#E0E7FF" strokeWidth="3" />
+                            <circle cx="20" cy="20" r="18" fill="transparent" stroke="#4F46E5" strokeWidth="3" strokeDasharray="113" strokeDashoffset={113 - (113 * (Math.min(user.karma || 0, 100) / 100))} />
                         </svg>
-                        <Trophy className="w-4 h-4 text-amber-400 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
+                        <Trophy className="w-4 h-4 text-indigo-500 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
                     </div>
                     {!isCollapsed && (
                         <div>
-                            <p className="text-white text-xs font-bold">{user.karma || 0} Karma</p>
-                            <p className="text-slate-400 text-[10px]">Level {Math.floor((user.karma || 0) / 50) + 1}</p>
+                            <p className="text-slate-800 text-xs font-bold">{user.karma || 0} Karma</p>
+                            <p className="text-indigo-500 text-[10px] font-medium">Level {Math.floor((user.karma || 0) / 50) + 1}</p>
                         </div>
                     )}
                 </div>

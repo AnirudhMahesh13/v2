@@ -34,7 +34,7 @@ export default async function RootLayout({
 
   return (
     <html lang="en" className={`${inter.variable} ${spaceGrotesk.variable}`} suppressHydrationWarning>
-      <body className="antialiased bg-grid-pattern min-h-screen flex flex-col">
+      <body className="antialiased bg-grid-pattern min-h-screen flex flex-col" suppressHydrationWarning>
         {user && <UserHeartbeat />}
 
         {/* Top Nav (Persistent) */}

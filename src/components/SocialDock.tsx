@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, MessageSquare, MoreHorizontal, X, Send } from 'lucide-react'
+import { Search, MessageSquare, MoreHorizontal, X, Send, ChevronLeft, ChevronRight } from 'lucide-react'
 import { getOnlineFriends } from '@/actions/presence'
 import { getMessages, sendMessage, markMessagesRead } from '@/actions/messaging'
 import FriendFinder from './FriendFinder'
@@ -31,6 +31,7 @@ export default function SocialDock({ currentUserId }: { currentUserId: string })
     const [activeChatUser, setActiveChatUser] = useState<Friend | null>(null)
     const [messages, setMessages] = useState<Message[]>([])
     const [newMessage, setNewMessage] = useState('')
+    const [isCollapsed, setIsCollapsed] = useState(false)
     const messagesEndRef = useRef<HTMLDivElement>(null)
 
     // Poll for online friends
@@ -92,12 +93,33 @@ export default function SocialDock({ currentUserId }: { currentUserId: string })
         setMessages(msgs)
     }
 
+    const toggle = () => setIsCollapsed(!isCollapsed)
+
+    // Framer Variants
+    const sidebarVariants = {
+        open: { width: 280, transition: { type: "spring" as const, stiffness: 300, damping: 30 } },
+        closed: { width: 80, transition: { type: "spring" as const, stiffness: 300, damping: 30 } }
+    }
+
     return (
-        <aside className="fixed right-0 top-20 bottom-0 w-[280px] bg-white border-l border-slate-200 shadow-xl flex flex-col z-40">
+        <motion.aside
+            initial="open"
+            animate={isCollapsed ? "closed" : "open"}
+            variants={sidebarVariants}
+            className="fixed right-0 top-16 bottom-0 z-40 bg-white border-l border-slate-200 shadow-xl flex flex-col"
+        >
+            {/* Toggle Button */}
+            <button
+                onClick={toggle}
+                className="absolute -left-3 top-6 bg-white border border-slate-200 rounded-full p-1 shadow-sm text-slate-500 hover:text-indigo-600 z-50"
+            >
+                {isCollapsed ? <ChevronLeft className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+            </button>
+
             {/* Header */}
-            <div className="p-4 border-b border-slate-100 flex items-center justify-between">
-                <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Social Dock</h2>
-                <div className="flex gap-2">
+            <div className={`p-4 border-b border-slate-100 flex items-center ${isCollapsed ? 'justify-center flex-col gap-2' : 'justify-between'}`}>
+                {!isCollapsed && <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest whitespace-nowrap overflow-hidden">Social Dock</h2>}
+                <div className={`flex gap-2 ${isCollapsed ? 'flex-col' : ''}`}>
                     <button className="p-1.5 rounded-md hover:bg-slate-50 text-slate-400 hover:text-slate-600 transition-colors">
                         <Search size={14} />
                     </button>
@@ -108,25 +130,29 @@ export default function SocialDock({ currentUserId }: { currentUserId: string })
             </div>
 
             {/* Friends List */}
-            <div className="flex-1 overflow-y-auto p-2 space-y-1">
-                <div className="mb-2 px-2 py-1">
-                    <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
-                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
-                        Online
-                    </h3>
+            <div className="flex-1 overflow-y-auto p-2 space-y-1 scrollbar-thin">
+                <div className={`mb-2 px-2 py-1 ${isCollapsed ? 'flex justify-center' : ''}`}>
+                    {isCollapsed ? (
+                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" title="Online"></div>
+                    ) : (
+                        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+                            Online
+                        </h3>
+                    )}
                 </div>
                 {friends.length === 0 ? (
                     <div className="text-center py-4">
-                        <p className="text-xs text-slate-400 italic">No friends online.</p>
+                        {!isCollapsed && <p className="text-xs text-slate-400 italic">No friends online.</p>}
                     </div>
                 ) : (
                     friends.map(friend => (
                         <button
                             key={friend.id}
                             onClick={() => setActiveChatUser(friend)}
-                            className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 group transition-colors text-left"
+                            className={`w-full flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 group transition-colors ${isCollapsed ? 'justify-center' : 'text-left'}`}
                         >
-                            <div className="relative">
+                            <div className="relative shrink-0">
                                 <div className="w-8 h-8 rounded-full bg-slate-100 ring-1 ring-slate-200 overflow-hidden flex items-center justify-center text-[10px] font-bold text-slate-500">
                                     {friend.image ? (
                                         <img src={friend.image} alt={friend.name || 'User'} className="w-full h-full object-cover" />
@@ -136,17 +162,22 @@ export default function SocialDock({ currentUserId }: { currentUserId: string })
                                 </div>
                                 <div className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-white"></div>
                             </div>
-                            <div className="flex-1 min-w-0">
-                                <span className="text-sm font-medium text-slate-700 group-hover:text-slate-900 truncate block">
-                                    {friend.name}
-                                </span>
-                                <span className="text-[10px] text-emerald-600 font-medium truncate block">
-                                    Online Now
-                                </span>
-                            </div>
-                            <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-                                <MessageSquare size={14} className="text-slate-400" />
-                            </div>
+
+                            {!isCollapsed && (
+                                <>
+                                    <div className="flex-1 min-w-0">
+                                        <span className="text-sm font-medium text-slate-700 group-hover:text-slate-900 truncate block">
+                                            {friend.name}
+                                        </span>
+                                        <span className="text-[10px] text-emerald-600 font-medium truncate block">
+                                            Online Now
+                                        </span>
+                                    </div>
+                                    <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <MessageSquare size={14} className="text-slate-400" />
+                                    </div>
+                                </>
+                            )}
                         </button>
                     ))
                 )}
@@ -154,7 +185,7 @@ export default function SocialDock({ currentUserId }: { currentUserId: string })
 
             {/* Friend Finder (Bottom Section) */}
             <div className="border-t border-slate-100 bg-slate-50/50 flex flex-col max-h-[40%]">
-                <FriendFinder />
+                <FriendFinder isCollapsed={isCollapsed} />
             </div>
 
             {/* Chat Pane (Overlay or Slide-up) */}
@@ -233,6 +264,6 @@ export default function SocialDock({ currentUserId }: { currentUserId: string })
                     </motion.div>
                 )}
             </AnimatePresence>
-        </aside>
+        </motion.aside>
     )
 }
