@@ -31,6 +31,7 @@ model School {
   users      User[]
   courses    Course[]
   professors Professor[]
+  clubs      Club[]
 }
 
 model User {
@@ -84,6 +85,12 @@ model User {
   
   posts            Post[]
   engagements      Engagement[]
+
+  // Clubs Relations
+  clubMemberships  ClubMember[]
+  clubApplications ClubApplication[]
+  eventRSVPs       EventRSVP[]
+  clubAnnouncements ClubAnnouncement[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -253,6 +260,8 @@ model Thread {
   isVisible   Boolean  @default(true)
   reportCount Int      @default(0)
   reports     Report[]
+
+  clubAnnouncement ClubAnnouncement?
 }
 
 model Comment {
@@ -446,6 +455,9 @@ model Post {
   courseId      String?
   course        Course?       @relation(fields: [courseId], references: [id])
 
+  clubId        String?
+  club          Club?         @relation(fields: [clubId], references: [id])
+
   engagements   Engagement[]
   
   // Metrics
@@ -478,4 +490,151 @@ model Engagement {
   createdAt DateTime       @default(now())
 
   @@unique([userId, postId, type]) // One like/view per user per post (simplification)
+}
+
+// CLUBS ECOSYSTEM
+
+enum ClubCategory {
+  ACADEMIC
+  CULTURAL
+  HOBBY
+  PROFESSIONAL
+  SPORTS
+  OTHER
+}
+
+enum ClubRole {
+  PRESIDENT
+  VP
+  EXECUTIVE
+  MEMBER
+}
+
+enum ApplicationStatus {
+  APPLIED
+  INTERVIEWING
+  OFFERED
+  ACCEPTED
+  REJECTED
+}
+
+enum OpportunityType {
+  VOLUNTEER
+  PAID
+  ROLE
+}
+
+model Club {
+  id          String       @id @default(uuid())
+  name        String
+  slug        String       @unique
+  description String
+  logoUrl     String?
+  coverUrl    String?
+  category    ClubCategory @default(OTHER)
+  
+  schoolId    String
+  school      School       @relation(fields: [schoolId], references: [id])
+  
+  members       ClubMember[]
+  events        ClubEvent[]
+  announcements ClubAnnouncement[]
+  applications  ClubApplication[]
+  opportunities ClubOpportunity[]
+  
+  // A club can have posts (media feed)
+  posts         Post[]
+
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model ClubMember {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  
+  clubId    String
+  club      Club     @relation(fields: [clubId], references: [id])
+  
+  role      ClubRole @default(MEMBER)
+  joinedAt  DateTime @default(now())
+
+  @@unique([userId, clubId])
+}
+
+model ClubEvent {
+  id          String   @id @default(uuid())
+  title       String
+  description String
+  startTime   DateTime
+  endTime     DateTime?
+  location    String?
+  imageUrl    String?
+  
+  clubId      String
+  club        Club     @relation(fields: [clubId], references: [id])
+  
+  // RSVPs
+  rsvps       EventRSVP[]
+
+  createdAt   DateTime @default(now())
+}
+
+model EventRSVP {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  eventId   String
+  event     ClubEvent @relation(fields: [eventId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([userId, eventId])
+}
+
+model ClubAnnouncement {
+  id        String   @id @default(uuid())
+  title     String
+  body      String
+  
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  
+  clubId    String
+  club      Club     @relation(fields: [clubId], references: [id])
+
+  // Linked Discussion Thread
+  threadId  String?  @unique
+  thread    Thread?  @relation(fields: [threadId], references: [id])
+
+  createdAt DateTime @default(now())
+}
+
+model ClubApplication {
+  id        String            @id @default(uuid())
+  position  String
+  status    ApplicationStatus @default(APPLIED)
+  answers   Json?             // Questionnaire responses
+  
+  userId    String
+  user      User              @relation(fields: [userId], references: [id])
+  
+  clubId    String
+  club      Club              @relation(fields: [clubId], references: [id])
+
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+}
+
+model ClubOpportunity {
+  id          String          @id @default(uuid())
+  title       String
+  description String
+  type        OpportunityType @default(VOLUNTEER)
+  
+  clubId      String
+  club        Club            @relation(fields: [clubId], references: [id])
+  
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
 }

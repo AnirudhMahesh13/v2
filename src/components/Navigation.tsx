@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { GraduationCap, BookOpen, Search } from 'lucide-react'
+import { GraduationCap, BookOpen, Search, Users } from 'lucide-react'
 import { Session } from 'next-auth'
 import { signIn } from 'next-auth/react'
 import { UserMenu } from './UserMenu'
@@ -28,6 +28,10 @@ export function Navigation({ user }: { user: Session['user'] | undefined }) {
                     <Link href="/tutors" className="flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">
                         <BookOpen className="w-4 h-4" />
                         Find Tutors
+                    </Link>
+                    <Link href="/clubs" className="flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">
+                        <Users className="w-4 h-4" />
+                        Clubs
                     </Link>
                     {user && (
                         <Link href="/feed" className="flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">
