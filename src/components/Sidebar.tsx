@@ -86,7 +86,7 @@ export function Sidebar({ user }: SidebarProps) {
 
             {/* 4. KARMA & PROFILE */}
             <div className="p-4 border-t border-slate-100">
-                <div className={`bg-gradient-to-br from-indigo-50 to-white border border-indigo-100 rounded-xl p-3 flex items-center gap-3 ${isCollapsed ? 'justify-center' : ''} shadow-sm`}>
+                <Link href={`/profile/${user.id}`} className={`bg-gradient-to-br from-indigo-50 to-white border border-indigo-100 rounded-xl p-3 flex items-center gap-3 ${isCollapsed ? 'justify-center' : ''} shadow-sm hover:shadow-md transition-shadow`}>
                     <div className="relative shrink-0">
                         {/* Ring */}
                         <svg className="w-10 h-10 transform -rotate-90">
@@ -101,7 +101,7 @@ export function Sidebar({ user }: SidebarProps) {
                             <p className="text-indigo-500 text-[10px] font-medium">Level {Math.floor((user.karma || 0) / 50) + 1}</p>
                         </div>
                     )}
-                </div>
+                </Link>
             </div>
         </motion.aside>
     )

@@ -53,6 +53,22 @@ export async function getOnlineFriends() {
     return onlineFriends
 }
 
+export async function getBasicUserInfo(userId: string) {
+    const session = await auth()
+    if (!session?.user?.id) return null
+
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+            id: true,
+            name: true,
+            image: true,
+            lastActive: true
+        }
+    })
+    return user
+}
+
 export async function getCommonCourses(targetUserId: string) {
     const session = await auth()
     if (!session?.user?.id) return []
@@ -361,6 +377,51 @@ export async function toggleVote(type: 'REVIEW' | 'THREAD' | 'COMMENT' | 'RESOUR
         }
     } catch (e) {
         return { error: 'Failed to vote' }
+    }
+}
+// --- FOLLOW SYSTEM ---
+
+export async function toggleFollow(targetUserId: string) {
+    const session = await auth()
+    if (!session?.user?.id) return { error: 'Unauthorized' }
+
+    const currentUserId = session.user.id
+
+    try {
+        const existingFollow = await prisma.follow.findUnique({
+            where: {
+                followerId_followingId: {
+                    followerId: currentUserId,
+                    followingId: targetUserId
+                }
+            }
+        })
+
+        if (existingFollow) {
+            await prisma.follow.delete({
+                where: {
+                    followerId_followingId: {
+                        followerId: currentUserId,
+                        followingId: targetUserId
+                    }
+                }
+            })
+            revalidatePath(`/profile/${targetUserId}`)
+            return { isFollowing: false }
+        } else {
+            await prisma.follow.create({
+                data: {
+                    followerId: currentUserId,
+                    followingId: targetUserId
+                }
+            })
+            // Create notification logic here ideally
+            revalidatePath(`/profile/${targetUserId}`)
+            return { isFollowing: true }
+        }
+    } catch (error) {
+        console.error(error)
+        return { error: 'Failed to update follow status' }
     }
 }
 

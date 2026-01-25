@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { GraduationCap, BookOpen, MapPin } from 'lucide-react'
+import Link from 'next/link'
 
 interface RecommendedUser {
     id: string
@@ -28,13 +29,13 @@ export function UserMiniCard({ user, onConnect, isPending }: UserMiniCardProps) 
         >
             {/* Header */}
             <div className="flex items-center gap-3 mb-3">
-                <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden border border-slate-200">
+                <Link href={`/profile/${user.id}`} className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden border border-slate-200 hover:scale-105 transition-transform">
                     {user.image ? (
                         <img src={user.image} alt={user.name || ''} className="w-full h-full object-cover" />
                     ) : (
                         <span className="text-xl font-bold text-slate-400">{user.name?.[0]}</span>
                     )}
-                </div>
+                </Link>
                 <div>
                     <h3 className="font-bold text-slate-800">{user.name}</h3>
                     <p className="text-xs text-slate-500 flex items-center gap-1">

@@ -3,6 +3,7 @@
 
 import { MapPin, Clock, Users } from 'lucide-react'
 import { joinBeacon } from '@/actions/beacons'
+import Link from 'next/link'
 import { useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 
@@ -37,15 +38,17 @@ export function BeaconCard({ beacon, currentUserId }: { beacon: any, currentUser
 
             <div className="flex items-start justify-between mb-4 relative z-10">
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-slate-100 overflow-hidden border border-slate-200">
+                    <Link href={`/profile/${beacon.user.id}`} className="w-10 h-10 rounded-full bg-slate-100 overflow-hidden border border-slate-200 hover:scale-105 transition-transform">
                         {beacon.user.image ? (
                             <img src={beacon.user.image} className="w-full h-full object-cover" />
                         ) : (
                             <div className="w-full h-full flex items-center justify-center font-bold text-slate-400">?</div>
                         )}
-                    </div>
+                    </Link>
                     <div>
-                        <h3 className="font-bold text-slate-900">{beacon.user.name}</h3>
+                        <Link href={`/profile/${beacon.user.id}`} className="font-bold text-slate-900 hover:text-indigo-600 transition-colors">
+                            {beacon.user.name}
+                        </Link>
                         <p className="text-xs text-slate-500 font-medium">{beacon.course ? `Studying ${beacon.course.code}` : 'Studying'}</p>
                     </div>
                 </div>
@@ -86,8 +89,8 @@ export function BeaconCard({ beacon, currentUserId }: { beacon: any, currentUser
                         onClick={handleJoin}
                         disabled={isPending}
                         className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${isAttending
-                                ? 'bg-indigo-100 text-indigo-700 border border-indigo-200'
-                                : 'bg-slate-900 text-white hover:bg-indigo-600'
+                            ? 'bg-indigo-100 text-indigo-700 border border-indigo-200'
+                            : 'bg-slate-900 text-white hover:bg-indigo-600'
                             }`}
                     >
                         {isPending ? '...' : isAttending ? "I'm In!" : "Join In"}

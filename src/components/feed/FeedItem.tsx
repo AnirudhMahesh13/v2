@@ -37,12 +37,14 @@ export function FeedItem({ item, currentUser }: { item: any, currentUser: any })
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center font-bold text-slate-500">
-                        {user.image ? <img src={user.image} className="w-full h-full rounded-full" /> : user.name?.[0]}
-                    </div>
+                    <Link href={`/profile/${user.id}`} className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center font-bold text-slate-500 overflow-hidden hover:scale-105 transition-transform">
+                        {user.image ? <img src={user.image} className="w-full h-full rounded-full object-cover block" style={{ width: '100%', height: '100%' }} /> : user.name?.[0]}
+                    </Link>
                     <div>
                         <div className="font-bold text-slate-900 flex items-center gap-2">
-                            {user.name}
+                            <Link href={`/profile/${user.id}`} className="hover:text-indigo-600 transition-colors">
+                                {user.name}
+                            </Link>
                             {user.karma > 100 && (
                                 <span className="text-[10px] bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded-full uppercase tracking-wider font-bold">
                                     Pro

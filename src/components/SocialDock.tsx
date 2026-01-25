@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, MessageSquare, MoreHorizontal, X, Send, ChevronLeft, ChevronRight } from 'lucide-react'
-import { getOnlineFriends } from '@/actions/social'
+import { useSearchParams } from 'next/navigation'
+import { getOnlineFriends, getBasicUserInfo } from '@/actions/social'
 import { getMessages, sendMessage, markMessagesRead } from '@/actions/messaging'
 import FriendFinder from './FriendFinder'
 
@@ -34,19 +35,38 @@ export default function SocialDock({ currentUserId }: { currentUserId: string })
     const [isCollapsed, setIsCollapsed] = useState(false)
     const messagesEndRef = useRef<HTMLDivElement>(null)
 
+    const searchParams = useSearchParams()
+
     // Poll for online friends
     useEffect(() => {
         const fetchFriends = async () => {
             const data = await getOnlineFriends()
-            // Ensure compatibility if the action returns varied types
-            // Action returns User[], so we are good.
             setFriends(data as any)
         }
-
         fetchFriends()
-        const interval = setInterval(fetchFriends, 30000) // 30s poll
+        const interval = setInterval(fetchFriends, 30000)
         return () => clearInterval(interval)
     }, [])
+
+    // Open chat from URL param
+    useEffect(() => {
+        const chatUserId = searchParams.get('chat')
+        if (chatUserId) {
+            const target = friends.find(f => f.id === chatUserId)
+            if (target) {
+                setActiveChatUser(target)
+                if (isCollapsed) setIsCollapsed(false)
+            } else {
+                // Fetch stranger info
+                getBasicUserInfo(chatUserId).then(user => {
+                    if (user) {
+                        setActiveChatUser(user as any)
+                        if (isCollapsed) setIsCollapsed(false)
+                    }
+                })
+            }
+        }
+    }, [searchParams, friends, isCollapsed])
 
     // Poll for messages when chat is open
     useEffect(() => {
@@ -155,7 +175,12 @@ export default function SocialDock({ currentUserId }: { currentUserId: string })
                             <div className="relative shrink-0">
                                 <div className="w-8 h-8 rounded-full bg-slate-100 ring-1 ring-slate-200 overflow-hidden flex items-center justify-center text-[10px] font-bold text-slate-500">
                                     {friend.image ? (
-                                        <img src={friend.image} alt={friend.name || 'User'} className="w-full h-full object-cover" />
+                                        <img
+                                            src={friend.image}
+                                            alt={friend.name || 'User'}
+                                            className="w-full h-full object-cover block"
+                                            style={{ width: '100%', height: '100%' }}
+                                        />
                                     ) : (
                                         (friend.name?.[0] || '?')
                                     )}
