@@ -32,6 +32,7 @@ model School {
   courses    Course[]
   professors Professor[]
   clubs      Club[]
+  beacons    Beacon[]
 }
 
 model User {
@@ -91,6 +92,10 @@ model User {
   clubApplications ClubApplication[]
   eventRSVPs       EventRSVP[]
   clubAnnouncements ClubAnnouncement[]
+
+  // Beacons
+  hostedBeacons     Beacon[]
+  joinedBeacons     BeaconJoin[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -152,6 +157,7 @@ model Course {
   squad         Squad?
   bounties      Bounty[]
   posts         Post[]
+  beacons       Beacon[]
 }
 
 model Professor {
@@ -637,4 +643,51 @@ model ClubOpportunity {
   
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
+}
+
+// BEACONS (Study Meetups)
+
+enum BeaconVibe {
+  QUIET
+  COLLABORATIVE
+  INTENSE
+}
+
+model Beacon {
+  id           String      @id @default(uuid())
+  locationName String
+  goal         String
+  vibe         BeaconVibe  @default(COLLABORATIVE)
+  
+  expiresAt    DateTime
+  
+  description  String?      // Optional details "Hertzberg 201, back table"
+
+  userId       String
+  user         User        @relation(fields: [userId], references: [id])
+  
+  courseId     String?
+  course       Course?     @relation(fields: [courseId], references: [id])
+  
+  schoolId     String
+  school       School      @relation(fields: [schoolId], references: [id])
+
+  // Joiners
+  attendees    BeaconJoin[]
+  
+  createdAt    DateTime    @default(now())
+}
+
+model BeaconJoin {
+  id        String   @id @default(uuid())
+  
+  beaconId  String
+  beacon    Beacon   @relation(fields: [beaconId], references: [id], onDelete: Cascade)
+  
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  
+  joinedAt  DateTime @default(now())
+
+  @@unique([beaconId, userId])
 }

@@ -32,6 +32,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             if (user) {
                 token.role = user.role
                 token.id = user.id
+                // @ts-expect-error -- dynamic property
+                token.schoolId = user.schoolId
             }
             return token
         },
@@ -40,6 +42,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 session.user.id = token.id as string
                 // @ts-expect-error -- role is dynamic
                 session.user.role = token.role as Role
+                session.user.schoolId = token.schoolId as string
             }
             return session
         },
