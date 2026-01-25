@@ -60,6 +60,7 @@ model User {
   bio               String?
   badges            Badge[]
   enrolledCourseIds String[]  // Simple array of IDs for now
+  completedCourseIds String[] @default([]) // Past/Completed courses
   lastActive        DateTime? // For Presence Pulse
   
   // Settings & Preferences

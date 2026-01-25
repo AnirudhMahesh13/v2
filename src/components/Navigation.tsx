@@ -38,10 +38,16 @@ export function Navigation({ user }: { user: Session['user'] | undefined }) {
                         Beacon
                     </Link>
                     {user && (
-                        <Link href="/feed" className="flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">
-                            <BookOpen className="w-4 h-4 text-indigo-500" />
-                            My Feed
-                        </Link>
+                        <>
+                            <Link href="/feed" className="flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">
+                                <BookOpen className="w-4 h-4 text-indigo-500" />
+                                My Feed
+                            </Link>
+                            <Link href="/onboarding/courses" className="flex items-center gap-2 text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">
+                                <GraduationCap className="w-4 h-4 text-emerald-500" />
+                                Semester
+                            </Link>
+                        </>
                     )}
                 </div>
 

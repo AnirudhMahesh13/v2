@@ -4,8 +4,9 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { BookOpen, Users, Trophy, Zap, ChevronLeft, ChevronRight, Home, School } from 'lucide-react'
+import { BookOpen, Users, Trophy, Zap, ChevronLeft, ChevronRight, Home, School, Plus } from 'lucide-react'
 import { getOnlineFriends } from '@/actions/presence'
+import { ActiveCourses } from './Sidebar/ActiveCourses'
 
 interface SidebarProps {
     user: any
@@ -59,26 +60,15 @@ export function Sidebar({ user }: SidebarProps) {
 
                 {/* 2. ENROLLED COURSES */}
                 <div className="space-y-2">
-                    {!isCollapsed && <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Enrolled</h3>}
-                    {user.enrolledCourseIds?.length > 0 ? (
-                        user.enrolledCourseIds.map((id: string) => (
-                            <Link key={id} href={`/schools/${user.schoolId || 'default'}/courses/${id}`} className="block">
-                                <div className={`flex items-center gap-3 p-2 rounded-lg transition-colors ${pathname.includes(id) ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50'}`}>
-                                    <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-xs shrink-0">
-                                        {/* Ideally fetch course code, using ID hash for now */}
-                                        {id.substring(0, 2).toUpperCase()}
-                                    </div>
-                                    {!isCollapsed && (
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-medium truncate">Course {id.substring(0, 6)}...</p>
-                                        </div>
-                                    )}
-                                </div>
+                    {!isCollapsed && (
+                        <div className="flex items-center justify-between px-2 mb-2">
+                            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Enrolled</h3>
+                            <Link href="/onboarding/courses" className="text-slate-400 hover:text-indigo-600">
+                                <Plus className="w-3 h-3" />
                             </Link>
-                        ))
-                    ) : (
-                        !isCollapsed && <p className="text-xs text-slate-400 pl-2">No courses enrolled.</p>
+                        </div>
                     )}
+                    <ActiveCourses isCollapsed={isCollapsed} />
                 </div>
 
 
