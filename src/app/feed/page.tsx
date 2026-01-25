@@ -1,76 +1,59 @@
-import { getPersonalizedFeed } from '@/actions/social'
-import { FeedItem } from '@/components/feed/FeedItem'
-import { AcademicIdentity } from '@/components/feed/AcademicIdentity'
-import { Sparkles } from 'lucide-react'
+import { getFeed, getDiscussions } from '@/actions/feed'
+import { auth } from '@/auth'
+import VerticalReel from '@/components/Feed/VerticalReel'
+import DiscussionFeed from '@/components/Feed/DiscussionFeed'
+import { redirect } from 'next/navigation'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Sparkles, MessageSquare } from 'lucide-react'
 
-export const dynamic = 'force-dynamic'
+export default async function FeedPage() {
+    const session = await auth()
+    if (!session?.user?.id) return redirect('/api/auth/signin')
 
-export default async function FeedPage({ searchParams }: { searchParams: Promise<{ filter?: string }> }) {
-    const params = await searchParams
-    const filter = (params.filter === 'TRENDING' ? 'TRENDING' : 'ALL') as 'TRENDING' | 'ALL'
+    const schoolId = session.user.schoolId || ''
 
-    const { items, user } = await getPersonalizedFeed(filter)
-
-    if (!user) {
-        return (
-            <div className="min-h-screen flex items-center justify-center">
-                <p>Please log in to view your feed.</p>
-            </div>
-        )
-    }
+    // Server Component Fetch - Parallel
+    const [pulseData, discussionData] = await Promise.all([
+        getFeed({ schoolId }),
+        getDiscussions({ schoolId })
+    ])
 
     return (
-        <div className="min-h-screen bg-slate-50">
-            <div className="max-w-6xl mx-auto px-4 py-8 grid grid-cols-1 lg:grid-cols-4 gap-8">
-
-                {/* Left Sidebar - Navigation */}
-                <div className="hidden lg:block lg:col-span-1">
-                    <div className="sticky top-24 space-y-4">
-                        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
-                            <h3 className="font-bold text-slate-900 mb-2">Filters</h3>
-                            <a href="/feed" className={`block w-full text-left px-3 py-2 rounded-lg font-medium text-sm mb-1 ${filter === 'ALL' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50'}`}>
-                                My Feed
-                            </a>
-                            <a href="/feed?filter=TRENDING" className={`block w-full text-left px-3 py-2 rounded-lg font-medium text-sm ${filter === 'TRENDING' ? 'bg-indigo-50 text-indigo-700' : 'text-slate-600 hover:bg-slate-50'}`}>
-                                Trending at {user.schoolId ? 'My School' : 'Classmate'}
-                            </a>
-                        </div>
+        <div className="min-h-screen bg-slate-50 flex flex-col">
+            <Tabs defaultValue="pulse" className="w-full h-full flex flex-col">
+                {/* Header / Tab Switcher */}
+                <header className="sticky top-16 lg:top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-200">
+                    <div className="container mx-auto px-4 h-14 flex items-center justify-center">
+                        <TabsList className="bg-slate-100 p-1 rounded-full border border-slate-200">
+                            <TabsTrigger value="pulse" className="rounded-full px-6 py-1.5 text-sm font-medium data-[state=active]:bg-white data-[state=active]:text-indigo-600 data-[state=active]:shadow-sm transition-all flex items-center gap-2 text-slate-500">
+                                <Sparkles className="w-4 h-4" />
+                                Pulse
+                            </TabsTrigger>
+                            <TabsTrigger value="discussions" className="rounded-full px-6 py-1.5 text-sm font-medium data-[state=active]:bg-white data-[state=active]:text-indigo-600 data-[state=active]:shadow-sm transition-all flex items-center gap-2 text-slate-500">
+                                <MessageSquare className="w-4 h-4" />
+                                Discussions
+                            </TabsTrigger>
+                        </TabsList>
                     </div>
-                </div>
+                </header>
 
-                {/* Main Feed */}
-                <div className="lg:col-span-2 space-y-6">
-                    <div className="flex items-center gap-2 mb-2">
-                        <Sparkles className="w-5 h-5 text-indigo-500 fill-indigo-500" />
-                        <h1 className="text-xl font-bold text-slate-900">
-                            {filter === 'TRENDING' ? 'Trending Content' : 'Your Academic Feed'}
-                        </h1>
-                    </div>
+                <TabsContent value="pulse" className="flex-1 mt-0">
+                    <VerticalReel
+                        initialPosts={pulseData.posts}
+                        schoolId={schoolId}
+                        initialCursor={pulseData.nextCursor}
+                    />
+                </TabsContent>
 
-                    {items.length > 0 ? (
-                        items.map((item: any) => (
-                            <FeedItem key={`${item.type}-${item.data.id}`} item={item} currentUser={user} />
-                        ))
-                    ) : (
-                        <div className="text-center py-12 bg-white rounded-2xl border border-slate-100 border-dashed">
-                            <p className="text-slate-500">No activity yet. Follow some students or courses!</p>
-                        </div>
-                    )}
-                </div>
-
-                {/* Right Sidebar - Identity */}
-                <div className="hidden lg:block lg:col-span-1">
-                    <div className="sticky top-24">
-                        <AcademicIdentity user={user} />
-
-                        {/* Suggested Follows (Placeholder) */}
-                        <div className="mt-6">
-                            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Recommended</h3>
-                            {/* <SuggestedUserList /> */}
-                        </div>
-                    </div>
-                </div>
-            </div>
+                <TabsContent value="discussions" className="flex-1 mt-0 bg-slate-50 h-[calc(100vh-120px)] overflow-y-auto">
+                    <DiscussionFeed
+                        initialThreads={discussionData.threads}
+                        schoolId={schoolId}
+                        initialCursor={discussionData.nextCursor}
+                    />
+                </TabsContent>
+            </Tabs>
         </div>
     )
 }
+

@@ -49,7 +49,44 @@ export async function getOnlineFriends() {
         take: 10,
     })
 
+
     return onlineFriends
+}
+
+export async function getCommonCourses(targetUserId: string) {
+    const session = await auth()
+    if (!session?.user?.id) return []
+
+    const currentUserId = session.user.id
+
+    // Fetch both users' enrolled courses
+    const [currentUser, targetUser] = await Promise.all([
+        prisma.user.findUnique({
+            where: { id: currentUserId },
+            select: { enrolledCourseIds: true }
+        }),
+        prisma.user.findUnique({
+            where: { id: targetUserId },
+            select: { enrolledCourseIds: true }
+        })
+    ])
+
+    if (!currentUser?.enrolledCourseIds || !targetUser?.enrolledCourseIds) return []
+
+    // Find overlapping IDs
+    const commonIds = currentUser.enrolledCourseIds.filter(id =>
+        targetUser.enrolledCourseIds.includes(id)
+    )
+
+    if (commonIds.length === 0) return []
+
+    // Fetch course details
+    const commonCourses = await prisma.course.findMany({
+        where: { id: { in: commonIds } },
+        select: { id: true, code: true, name: true }
+    })
+
+    return commonCourses
 }
 
 // --- FRIEND FINDER (COURSE OVERLAP) ---
