@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { GraduationCap, BookOpen, Search } from 'lucide-react'
 import { Session } from 'next-auth'
 import { signIn } from 'next-auth/react'
+import { UserMenu } from './UserMenu'
 
 export function Navigation({ user }: { user: Session['user'] | undefined }) {
 
@@ -40,18 +41,7 @@ export function Navigation({ user }: { user: Session['user'] | undefined }) {
                 <div className="flex items-center gap-4">
                     {user ? (
                         <div className="flex items-center gap-4 pl-6 border-l border-slate-200">
-                            <Link href="/dashboard" className="hidden md:block text-sm font-medium text-slate-900 hover:text-indigo-600 transition-colors">
-                                {user.name || 'Student'}
-                            </Link>
-                            <div className="h-9 w-9 rounded-full bg-slate-100 border border-slate-200 overflow-hidden cursor-pointer hover:border-slate-300 transition-colors">
-                                {user.image ? (
-                                    <img src={user.image} alt="Profile" className="h-full w-full object-cover" />
-                                ) : (
-                                    <div className="h-full w-full flex items-center justify-center text-slate-600 font-bold text-xs">
-                                        {user.email?.charAt(0).toUpperCase()}
-                                    </div>
-                                )}
-                            </div>
+                            <UserMenu user={user} />
                         </div>
                     ) : (
                         <button

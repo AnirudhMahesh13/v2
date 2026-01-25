@@ -6,6 +6,8 @@ import { auth } from "@/auth";
 import { Sidebar } from "@/components/Sidebar";
 import SocialDock from "@/components/SocialDock";
 import { UserHeartbeat } from "@/components/UserHeartbeat";
+import { DevUserPicker } from "@/components/dev/DevUserPicker";
+import { getDevUsers } from "@/actions/dev";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -31,6 +33,7 @@ export default async function RootLayout({
 }>) {
   const session = await auth();
   const user = session?.user;
+  const devUsers = await getDevUsers();
 
   return (
     <html lang="en" className={`${inter.variable} ${spaceGrotesk.variable}`} suppressHydrationWarning>
@@ -60,6 +63,9 @@ export default async function RootLayout({
             {children}
           </main>
         </div>
+
+        {/* Dev Tools */}
+        {process.env.NODE_ENV !== 'production' && <DevUserPicker users={devUsers} />}
       </body>
     </html>
   );
