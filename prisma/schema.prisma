@@ -60,6 +60,11 @@ model User {
   enrolledCourseIds String[]  // Simple array of IDs for now
   lastActive        DateTime? // For Presence Pulse
   
+  // Settings & Preferences
+  notificationPrefs Json?
+  privacySettings   Json?
+  blockedUserIds    String[] @default([])
+  
   followedBy    Follow[]  @relation("UserFollowedBy")
   following     Follow[]  @relation("UserFollows")
   

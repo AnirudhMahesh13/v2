@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, MessageSquare, MoreHorizontal, X, Send, ChevronLeft, ChevronRight } from 'lucide-react'
-import { getOnlineFriends } from '@/actions/presence'
+import { getOnlineFriends } from '@/actions/social'
 import { getMessages, sendMessage, markMessagesRead } from '@/actions/messaging'
 import FriendFinder from './FriendFinder'
 

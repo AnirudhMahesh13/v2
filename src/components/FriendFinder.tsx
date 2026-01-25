@@ -3,9 +3,18 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { UserPlus, Sparkles, RefreshCw } from 'lucide-react'
-import { getRecommendedUsers, RecommendedUser } from '@/actions/discovery'
+import { getFriendRecommendations } from '@/actions/social'
 import { sendFriendRequest } from '@/actions/social'
 import { UserMiniCard } from './UserMiniCard'
+
+interface RecommendedUser {
+    id: string
+    name: string | null
+    image: string | null
+    sharedCourseCount: number
+    schoolName: string | undefined | null
+    sharedCourseCodes: string[]
+}
 
 export default function FriendFinder({ isCollapsed }: { isCollapsed: boolean }) {
     const [recommendations, setRecommendations] = useState<RecommendedUser[]>([])
@@ -20,8 +29,8 @@ export default function FriendFinder({ isCollapsed }: { isCollapsed: boolean }) 
     const loadRecommendations = async () => {
         setLoading(true)
         try {
-            const data = await getRecommendedUsers()
-            setRecommendations(data)
+            const data = await getFriendRecommendations()
+            setRecommendations(data as any)
         } finally {
             setLoading(false)
         }

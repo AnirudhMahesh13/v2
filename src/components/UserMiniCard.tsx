@@ -2,7 +2,15 @@
 
 import { motion } from 'framer-motion'
 import { GraduationCap, BookOpen, MapPin } from 'lucide-react'
-import { RecommendedUser } from '@/actions/discovery'
+
+interface RecommendedUser {
+    id: string
+    name: string | null
+    image: string | null
+    sharedCourseCount: number
+    schoolName: string | undefined | null
+    sharedCourseCodes: string[]
+}
 
 interface UserMiniCardProps {
     user: RecommendedUser
